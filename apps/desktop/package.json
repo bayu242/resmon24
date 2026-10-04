@@ -1,17 +1,18 @@
 {
-  "name": "electrobun-react-demo",
+  "name": "resmon24-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "bun scripts/dev.ts",
     "dev:vite": "vite --port 5173",
     "dev:bun": "bun scripts/dev-bun.ts",
-    "build": "vite build && electrobun build",
+    "build": "vite build && bun scripts/mirror-view-assets.ts && electrobun build",
     "package:linux": "bun scripts/package-linux.ts",
     "package:linux:quick": "bun scripts/package-linux.ts --skip-build"
   },
   "dependencies": {
+    "@resmon24/protocol": "file:../../packages/protocol",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-router": "^1.170.41",
@@ -20,9 +21,6 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.18"
-  },
-  "patchedDependencies": {
-    "electrobun@1.12.3": "patches/electrobun@1.12.3.patch"
   },
   "devDependencies": {
     "@types/bun": "latest",

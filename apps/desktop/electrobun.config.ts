@@ -1,5 +1,12 @@
 import type { ElectrobunConfig } from "electrobun";
 
+// `category` and `description` are consumed by scripts/package-linux.ts
+// (freedesktop .desktop entry + deb control), which the upstream config type
+// doesn't model yet.
+type Resmon24Config = ElectrobunConfig & {
+  build: { linux: { category?: string; description?: string } };
+};
+
 export default {
   app: {
     name: "Resmon24",
@@ -12,9 +19,7 @@ export default {
       external: [],
     },
     copy: {
-      "dist/mainview/index.html": "views/mainview/index.html",
-      "dist/tabview/index.html": "views/tabview/index.html",
-      "dist/assets": "views/assets",
+      "dist/mainview": "views/mainview",
     },
     mac: { bundleCEF: false },
     linux: {
@@ -25,4 +30,4 @@ export default {
     },
     win: { bundleCEF: false },
   },
-} satisfies ElectrobunConfig;
+} satisfies Resmon24Config;

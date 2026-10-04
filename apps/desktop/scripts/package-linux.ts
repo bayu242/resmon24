@@ -266,6 +266,9 @@ async function main() {
   if (!SKIP_BUILD) {
     log("building renderer bundle (vite)");
     if (!run(["bunx", "vite", "build"])) fail("vite build failed");
+    log("mirroring renderer assets into view folders");
+    const { mirrorViewAssets } = await import("./mirror-view-assets");
+    if (!mirrorViewAssets()) fail("mirror-view-assets failed");
     log(`building ${CHANNEL} app bundle (electrobun)`);
     if (!run(["bunx", "electrobun", "build", `--env=${CHANNEL}`])) fail("electrobun build failed");
   }

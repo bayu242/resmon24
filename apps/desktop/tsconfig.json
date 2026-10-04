@@ -13,7 +13,9 @@
     "noEmit": true,
     "types": ["bun-types"],
     "paths": {
-      "@/*": ["./src/tabview/app/*"]
+      "electrobun": ["./.hutch/devkit/api/sdks/main/index.ts"],
+      "electrobun/bun": ["./.hutch/devkit/api/sdks/main/index.ts"],
+      "electrobun/view": ["./.hutch/devkit/api/browser/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts"],

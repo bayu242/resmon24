@@ -9,7 +9,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const VIEWS = ["mainview", "tabview"] as const;
+const VIEWS = ["mainview"] as const;
 
 export function mirrorViewAssets(root: string = PROJECT_ROOT): boolean {
   const assets = resolve(root, "dist/assets");
@@ -20,4 +20,8 @@ export function mirrorViewAssets(root: string = PROJECT_ROOT): boolean {
     cpSync(assets, target, { recursive: true });
   }
   return true;
+}
+
+if (import.meta.main) {
+  mirrorViewAssets();
 }

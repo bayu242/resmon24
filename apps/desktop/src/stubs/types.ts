@@ -1,56 +1,84 @@
-// Cross-process RPC type contracts for ElectrobunDemo.
+// Cross-process RPC type contracts for Resmon24.
+//
+// MonitorConfig / MonitorClient / MonitorState mirror the shapes produced by
+// MonitorServer.getState() in src/bun/server.ts; MonitorRPC is the schema for
+// the Bun <-> renderer bridge.
 
-export type Tab = {
-  id: string;
-  label: string;
+import type { ResourceUpdateMessage } from "@resmon24/protocol";
+
+// ── Monitor domain ────────────────────────────────────────────────────────────
+
+export type MonitorConfig = {
+  intervalMs: number;
+  screens: string[];
+  rotateMs: number;
+  brightness?: number;
+  timezone?: string;
 };
 
-// ── Shell RPC (Bun ↔ Shell/mainview) ─────────────────────────────────────────
+export type MonitorClient = {
+  id: string;
+  remoteAddress: string;
+  deviceId?: string;
+  firmware?: string;
+  board?: string;
+  timezone?: string;
+  connectedAt: number;
+  lastSeenAt: number;
+  configAcked: boolean;
+  messagesIn: number;
+  rttMs: number | null;
+  reconnects: number;
+  stale: boolean;
+};
 
-export type ShellRPC = {
-  webview: {
-    requests: Record<never, never>
-    messages: {
-      /** Bun pushes the authoritative tab state after every mutation */
-      tabState: { tabs: Tab[]; activeTabId: string }
-    }
-  }
-  bun: {
-    requests: Record<never, never>
-    messages: {
-      /** Shell forwards user interactions — Bun mutates state and pushes tabState back */
-      tabAction: TabAction
-    }
-  }
-}
+export type MonitorDiagnostics = {
+  startedAt: number | null;
+  uptimeSec: number;
+  intervalMs: number;
+  samplesSent: number;
+  lastSampleAt: number | null;
+  sessions: number;
+  reconnects: number;
+  closedByServer: number;
+  lastError: string | null;
+};
 
-export type TabAction =
-  | { type: "add" }
-  | { type: "close";    id: string }
-  | { type: "activate"; id: string }
-  | { type: "reopen" }
-  | { type: "prev" }
-  | { type: "next" }
-  | { type: "byIndex";  index: number }  // 0-based
+export type MonitorState = {
+  running: boolean;
+  hostname: string;
+  port: number;
+  startedAt: number | null;
+  config: MonitorConfig;
+  clients: MonitorClient[];
+  samplesSent: number;
+  lastError: string | null;
+  latestSample: ResourceUpdateMessage | null;
+  diagnostics: MonitorDiagnostics;
+};
 
-// ── Tab RPC (Bun ↔ each OOPIF tab) ───────────────────────────────────────────
+export type SetMonitorConfigParams = {
+  intervalMs?: number;
+  screens?: string[];
+  rotateMs?: number;
+  brightness?: number;
+  timezone?: string;
+};
 
-export type TabRPC = {
+// ── Monitor RPC (Bun ↔ renderer) ─────────────────────────────────────────────
+
+export type MonitorRPC = {
   webview: {
     requests: Record<never, never>
     messages: Record<never, never>
   }
   bun: {
     requests: {
-      registerTab:   { params: { tabId: string; webviewId: number }; response: void }
-      unregisterTab: { params: { tabId: string }; response: void }
-      ping:          { params: { message: string }; response: { pong: string } }
-      get_system_info: {
-        params: Record<never, never>
-        response: { platform: string; arch: string; bunVersion: string; cwd: string; pid: number }
-      }
-      open_file_dialog: { params: Record<never, never>; response: { files: string[] } }
-      open_external:    { params: { url: string }; response: void }
+      get_monitor_state:  { params: Record<never, never>; response: MonitorState }
+      get_latest_sample:  { params: Record<never, never>; response: ResourceUpdateMessage | null }
+      set_monitor_config: { params: SetMonitorConfigParams; response: MonitorState }
+      start_monitor:      { params: Record<never, never>; response: MonitorState }
+      stop_monitor:       { params: Record<never, never>; response: MonitorState }
     }
     messages: Record<never, never>
   }
