@@ -69,5 +69,9 @@ tmp/
 .cache/
 *.pid
 
+# ---- Electrobun / Hutch runtime temp ----
+.cottontail-tmp/
+**/.hutch/locks/
+
 # ---- Generated knowledge graph (local analysis) ----
 graphify-out/
