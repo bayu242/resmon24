@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/ping.schema.json",
+  "title": "ping",
+  "description": "Bidirectional heartbeat. pong echoes the id of the ping when present.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "envelope.schema.json#/$defs/Envelope" },
+    {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": { "const": "ping" },
+        "data": {
+          "type": "object",
+          "description": "Empty in v1."
+        }
+      }
+    }
+  ]
+}

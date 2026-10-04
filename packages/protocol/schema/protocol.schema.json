@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/protocol.schema.json",
+  "title": "ProtocolMessage",
+  "description": "Union of all resmon24 v1 protocol messages, discriminated by the type field. Useful for validating a complete frame.",
+  "oneOf": [
+    { "$ref": "hello.schema.json" },
+    { "$ref": "welcome.schema.json" },
+    { "$ref": "resource_update.schema.json" },
+    { "$ref": "config.schema.json" },
+    { "$ref": "ack.schema.json" },
+    { "$ref": "error.schema.json" },
+    { "$ref": "ping.schema.json" },
+    { "$ref": "pong.schema.json" }
+  ]
+}

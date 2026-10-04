@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/hello.schema.json",
+  "title": "hello",
+  "description": "Device to desktop. Sent immediately after the WebSocket opens to identify the device and its capabilities.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "envelope.schema.json#/$defs/Envelope" },
+    {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": { "const": "hello" },
+        "data": {
+          "type": "object",
+          "required": ["deviceId", "firmware", "board", "capabilities"],
+          "properties": {
+            "deviceId": {
+              "type": "string",
+              "description": "Stable device identifier (MAC-derived)."
+            },
+            "firmware": {
+              "type": "string",
+              "description": "Semantic version of the firmware."
+            },
+            "board": {
+              "type": "string",
+              "description": "Board identifier."
+            },
+            "timezone": {
+              "type": "string",
+              "description": "Optional. Effective POSIX TZ captured at onboarding."
+            },
+            "capabilities": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Feature tokens the device can render/accept."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

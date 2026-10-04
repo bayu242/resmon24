@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/ack.schema.json",
+  "title": "ack",
+  "description": "Device to desktop. Confirms receipt/handling of a message that requested acknowledgment (currently config).",
+  "type": "object",
+  "allOf": [
+    { "$ref": "envelope.schema.json#/$defs/Envelope" },
+    {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": { "const": "ack" },
+        "data": {
+          "type": "object",
+          "required": ["ok"],
+          "properties": {
+            "ok": { "type": "boolean", "description": "Whether the referenced message was handled successfully." }
+          }
+        }
+      }
+    }
+  ]
+}

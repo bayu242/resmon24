@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>resmon24 — External Hardware Resource Monitor for Linux</title>
+<meta name="description" content="resmon24 streams Linux CPU, RAM, GPU and temperature metrics to a tiny ESP8266 + OLED display on your desk. Open source. No cloud. No screen real estate lost." />
+<meta property="og:title" content="resmon24 — External Hardware Resource Monitor" />
+<meta property="og:description" content="Glanceable machine health on a dedicated OLED display. Linux desktop app + ESP8266 firmware, schema-first protocol, zero cloud." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     RawBlock Design System — see docs/DESIGN.md
+     Black on white. 0px radius. No shadows. Thick borders.
+     Blue (#0000FF) is reserved for hyperlinks only.
+     ============================================================ */
+  :root {
+    --black: #000000;
+    --white: #FFFFFF;
+    --blue: #0000FF;
+    --green: #008000;
+    --orange: #FFA500;
+    --red: #FF0000;
+    --sunken: #F0F0F0;
+    --border-thin: 1px;
+    --border-thick: 3px;
+    --border-heavy: 5px;
+    --headline: "Archivo Black", "Arial Black", sans-serif;
+    --body: "Work Sans", Arial, Helvetica, sans-serif;
+    --mono: "Space Mono", "Courier New", monospace;
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 16px;
+    --sp-4: 24px;
+    --sp-5: 40px;
+    --sp-6: 64px;
+    --sp-7: 80px;
+    --sp-8: 120px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--white);
+    color: var(--black);
+    font-family: var(--body);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Typography ---- */
+  h1 {
+    font-family: var(--headline);
+    font-size: 64px;
+    font-weight: 400;
+    line-height: 1.0;
+    letter-spacing: -0.5px;
+  }
+  h2 {
+    font-family: var(--headline);
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 1.05;
+  }
+  h3 {
+    font-family: var(--headline);
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.1;
+  }
+  h4 {
+    font-family: var(--body);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  p { font-family: var(--body); font-size: 16px; line-height: 1.6; }
+  .small { font-size: 14px; line-height: 1.5; }
+  .tiny { font-size: 12px; line-height: 1.4; }
+  .mono {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  a {
+    color: var(--blue);
+    text-decoration: underline;
+  }
+  a:hover { color: var(--blue); }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 var(--sp-4);
+  }
+
+  /* ---- Labels / chips ---- */
+  .label {
+    font-family: var(--headline);
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: var(--sp-1);
+  }
+  .chip {
+    display: inline-block;
+    border: 2px solid var(--black);
+    background: var(--white);
+    color: var(--black);
+    font-family: var(--body);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+  }
+  .chip.active {
+    background: var(--black);
+    color: var(--white);
+  }
+  .chip.status {
+    border-width: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .chip.status-ok { color: var(--green); border-color: var(--green); }
+  .chip.status-warn { color: var(--orange); border-color: var(--orange); }
+  .chip.status-err { color: var(--red); border-color: var(--red); }
+
+  /* ---- Buttons (RawBlock) ---- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 44px;
+    height: 44px;
+    padding: 10px 24px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-decoration: none;
+    cursor: pointer;
+    border: var(--border-thick) solid var(--black);
+    transition: none;
+    white-space: nowrap;
+  }
+  .btn:hover { text-decoration: none; }
+  .btn-primary {
+    background: var(--black);
+    color: var(--white);
+  }
+  .btn-primary:hover {
+    background: var(--white);
+    color: var(--black);
+  }
+  .btn-primary:active {
+    background: var(--black);
+    color: var(--white);
+    border-width: var(--border-heavy);
+  }
+  .btn-secondary {
+    background: var(--white);
+    color: var(--black);
+  }
+  .btn-secondary:hover {
+    background: var(--black);
+    color: var(--white);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--black);
+    border: none;
+    text-decoration: underline;
+  }
+  .btn-ghost:hover {
+    color: var(--blue);
+  }
+  .btn-sm {
+    font-size: 12px;
+    line-height: 32px;
+    height: 32px;
+    padding: 6px 16px;
+    letter-spacing: 2px;
+  }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--white);
+    border: var(--border-thick) solid var(--black);
+    padding: var(--sp-4);
+  }
+  .card-elevated {
+    background: var(--white);
+    border: var(--border-heavy) solid var(--black);
+    padding: var(--sp-4);
+  }
+
+  /* ---- Header ---- */
+  header {
+    background: var(--white);
+    border-bottom: var(--border-thick) solid var(--black);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 72px;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-family: var(--headline);
+    font-size: 24px;
+    color: var(--black);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .logo:hover { color: var(--black); text-decoration: none; }
+  .logo::before { content: "[ "; }
+  .logo::after { content: " ]"; }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .nav-links a {
+    font-family: var(--body);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--black);
+    text-decoration: none;
+  }
+  .nav-links a:hover {
+    text-decoration: underline;
+    color: var(--blue);
+  }
+
+  /* ---- Hero (asymmetric, intentionally irregular) ---- */
+  .hero {
+    padding: var(--sp-7) 0 var(--sp-8);
+    border-bottom: var(--border-heavy) solid var(--black);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: var(--sp-5);
+    align-items: start;
+  }
+  .hero .eyebrow {
+    display: flex;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--sp-4);
+  }
+  .hero h1 {
+    margin-bottom: var(--sp-4);
+    max-width: 14ch;
+  }
+  .hero .lede {
+    font-size: 18px;
+    line-height: 1.6;
+    max-width: 46ch;
+    margin-bottom: var(--sp-5);
+  }
+  .hero-cta {
+    display: flex;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--sp-3);
+  }
+  .hero-note {
+    font-family: var(--mono);
+    font-size: 13px;
+    border-left: var(--border-thick) solid var(--black);
+    padding-left: var(--sp-3);
+    margin-top: var(--sp-4);
+  }
+
+  /* ---- Raw readout block (inverted, replaces decorative mock) ---- */
+  .readout {
+    background: var(--black);
+    color: var(--white);
+    border: var(--border-thick) solid var(--black);
+    padding: var(--sp-4);
+    margin-top: var(--sp-6);
+  }
+  .readout .readout-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-3);
+    border-bottom: var(--border-thin) solid var(--white);
+    padding-bottom: var(--sp-2);
+    margin-bottom: var(--sp-3);
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .readout pre {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--white);
+    overflow-x: auto;
+  }
+  .readout .readout-foot {
+    border-top: var(--border-thin) solid var(--white);
+    margin-top: var(--sp-3);
+    padding-top: var(--sp-2);
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-3);
+  }
+
+  /* ---- Sections ---- */
+  section { padding: var(--sp-8) 0; }
+  .section-head {
+    border-bottom: var(--border-thick) solid var(--black);
+    padding-bottom: var(--sp-4);
+    margin-bottom: var(--sp-5);
+  }
+  .section-head .label {
+    margin-bottom: var(--sp-3);
+  }
+  .section-head h2 { max-width: 22ch; }
+  .section-head p {
+    margin-top: var(--sp-3);
+    max-width: 58ch;
+    font-size: 18px;
+  }
+
+  /* ---- Problem / how-it-works grids ---- */
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-4);
+  }
+  .grid-3 .card:nth-child(2) {
+    margin-top: var(--sp-5);
+  }
+  .grid-3 .card:nth-child(3) {
+    margin-top: var(--sp-6);
+  }
+  .card .idx {
+    font-family: var(--mono);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: var(--border-thin) solid var(--black);
+    padding-bottom: var(--sp-2);
+    margin-bottom: var(--sp-3);
+    display: block;
+  }
+  .card h3 {
+    font-size: 32px;
+    margin-bottom: var(--sp-3);
+  }
+  .card h4 { margin-bottom: var(--sp-2); }
+
+  /* ---- Inverted band ---- */
+  .inverted {
+    background: var(--black);
+    color: var(--white);
+  }
+  .inverted .section-head {
+    border-bottom-color: var(--white);
+  }
+  .inverted a { color: var(--white); }
+  .inverted a:hover { color: var(--white); }
+  .inverted .card {
+    background: var(--black);
+    color: var(--white);
+    border-color: var(--white);
+  }
+  .inverted .card .idx {
+    border-bottom-color: var(--white);
+  }
+  .inverted .card p {
+    color: var(--white);
+  }
+
+  /* ---- Features as raw list ---- */
+  .feature-list {
+    border-top: var(--border-thick) solid var(--black);
+  }
+  .feature-row {
+    display: grid;
+    grid-template-columns: 8ch 1fr 1.4fr;
+    gap: var(--sp-4);
+    align-items: baseline;
+    border-bottom: var(--border-thick) solid var(--black);
+    padding: 20px 0;
+  }
+  .feature-row:hover {
+    background: var(--black);
+    color: var(--white);
+  }
+  .feature-row .num {
+    font-family: var(--mono);
+    font-size: 15px;
+  }
+  .feature-row .name {
+    font-family: var(--headline);
+    font-size: 22px;
+    line-height: 1.2;
+  }
+  .feature-row .desc {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ---- Architecture ---- */
+  .arch-box {
+    border: var(--border-thick) solid var(--black);
+    padding: var(--sp-4);
+    overflow-x: auto;
+  }
+  .arch-box pre {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    min-width: 680px;
+    white-space: pre;
+  }
+  .stack-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    margin-top: var(--sp-4);
+  }
+
+  /* ---- KPI table ---- */
+  .kpi-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: var(--border-thick) solid var(--black);
+    font-family: var(--body);
+    font-size: 15px;
+  }
+  .kpi-table th {
+    font-family: var(--headline);
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    background: var(--black);
+    color: var(--white);
+    padding: 12px 16px;
+    border: var(--border-thin) solid var(--black);
+  }
+  .kpi-table td {
+    padding: 12px 16px;
+    border: var(--border-thin) solid var(--black);
+    vertical-align: top;
+  }
+  .kpi-table td.metric {
+    font-family: var(--mono);
+    font-size: 18px;
+    white-space: nowrap;
+    width: 1%;
+  }
+  .kpi-table tr:hover td {
+    background: var(--sunken);
+  }
+  .inverted .kpi-table {
+    border-color: var(--white);
+  }
+  .cta-actions { margin-bottom: 0; }
+  .foot-note { margin-top: var(--sp-2); }
+  .inverted .kpi-table th {
+    background: var(--white);
+    color: var(--black);
+    border-color: var(--white);
+  }
+  .inverted .kpi-table td {
+    border-color: var(--white);
+  }
+  .inverted .kpi-table tr:hover td {
+    background: var(--white);
+    color: var(--black);
+  }
+
+  /* ---- Quick start code block ---- */
+  .code-block {
+    background: var(--black);
+    color: var(--white);
+    border: var(--border-thick) solid var(--black);
+    padding: var(--sp-4);
+  }
+  .code-block .code-label {
+    font-family: var(--body);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: var(--border-thin) solid var(--white);
+    padding-bottom: var(--sp-2);
+    margin-bottom: var(--sp-3);
+  }
+  .code-block pre {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--white);
+    overflow-x: auto;
+  }
+  .code-block .c { color: var(--green); }
+
+  /* ---- Footer ---- */
+  footer {
+    background: var(--black);
+    color: var(--white);
+    padding: var(--sp-5) 0;
+  }
+  .foot-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .foot-grid .logo { color: var(--white); }
+  .foot-grid .logo:hover { color: var(--white); }
+  .foot-links {
+    display: flex;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+    font-family: var(--body);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .foot-links a {
+    color: var(--white);
+    text-decoration: underline;
+  }
+  .foot-links a:hover { color: var(--white); }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 900px) {
+    h1 { font-size: 44px; }
+    h2 { font-size: 34px; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-3 .card:nth-child(2),
+    .grid-3 .card:nth-child(3) { margin-top: 0; }
+    .feature-row { grid-template-columns: 6ch 1fr; }
+    .feature-row .desc { grid-column: 1 / -1; }
+    .cta-inner { grid-template-columns: 1fr; align-items: start; }
+  }
+  @media (max-width: 560px) {
+    h1 { font-size: 36px; }
+    .nav-links a:not(.btn) { display: none; }
+    .hero-cta .btn { width: 100%; }
+    section { padding: var(--sp-6) 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#top">resmon24</a>
+    <nav class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#quickstart">Quick start</a>
+      <a class="btn btn-secondary btn-sm" data-repo-link href="#">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">
+          <span class="chip active">Open source</span>
+          <span class="chip">Linux</span>
+          <span class="chip">ESP8266</span>
+          <span class="chip status status-ok">No cloud</span>
+        </div>
+        <h1>Your machine's health. On a display that stays out of the way.</h1>
+        <p class="lede">
+          resmon24 streams CPU, RAM, GPU, and temperature from your Linux desktop
+          to a tiny OLED on your desk. Always visible. Never stealing a pixel of
+          screen real estate.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" data-repo-link data-suffix="/releases" href="#">
+            Download for Linux
+          </a>
+          <a class="btn btn-secondary" data-repo-link href="#">
+            View source
+          </a>
+          <a class="btn btn-ghost" href="#how">How it works</a>
+        </div>
+      </div>
+
+      <div class="readout" aria-label="Sample device readout">
+        <div class="readout-head">
+          <span>resmon24 / resource</span>
+          <span>lan · 14ms</span>
+        </div>
+        <pre>cpu   [############------------]  47%
+ram   [########----------------]  35%   11.2 / 32 GB
+gpu   [##############----------]  62%
+temp  54 C   fan  1180 rpm
+uptime 3d 07:12   ws  up</pre>
+        <div class="readout-foot">
+          <span>mode: resource</span>
+          <span>push: 1s</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section id="problem">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="label">The problem</div>
+        <h2>Dashboard apps live exactly where you can't see them.</h2>
+        <p>
+          When you're rendering, gaming, or SSH'd into a headless box, the
+          monitor on screen is the last thing you can look at. resmon24 moves
+          the numbers onto dedicated hardware.
+        </p>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <span class="idx">01 / Screen</span>
+          <h3>Screen real estate</h3>
+          <p>Overlay widgets compete with your work. A 0.96" OLED on the desk competes with nothing.</p>
+        </div>
+        <div class="card">
+          <span class="idx">02 / Fullscreen</span>
+          <h3>Full-screen &amp; headless</h3>
+          <p>Fullscreen workloads hide every widget. Headless machines have no widgets at all. The display still works.</p>
+        </div>
+        <div class="card">
+          <span class="idx">03 / Always-on</span>
+          <h3>Glanceability</h3>
+          <p>One look tells you CPU, memory, GPU and thermals — and flips to a clock when the desktop is idle.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS (inverted band) -->
+  <section id="how" class="inverted">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="label">How it works</div>
+        <h2>Three moving parts. One wire contract.</h2>
+        <p>
+          The desktop samples hardware, the firmware renders it, and a
+          schema-first protocol keeps both sides in lockstep.
+        </p>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <span class="idx">Step 01</span>
+          <h3>Desktop samples</h3>
+          <p>Electrobun + Bun reads CPU / RAM / GPU / temperature and pushes samples over a local WebSocket once per second.</p>
+        </div>
+        <div class="card">
+          <span class="idx">Step 02</span>
+          <h3>Device connects</h3>
+          <p>mDNS finds the desktop automatically. First boot opens a captive portal for WiFi SSID, password, and timezone.</p>
+        </div>
+        <div class="card">
+          <span class="idx">Step 03</span>
+          <h3>OLED renders</h3>
+          <p>The resource view shows while a session is live — and switches to clock + date within a second when it isn't.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="label">Features</div>
+        <h2>Built to be boring in the best way.</h2>
+        <p>
+          No accounts, no telemetry, no dashboards in a browser tab. Just a LAN,
+          a tiny screen, and a protocol that can't drift.
+        </p>
+      </div>
+      <div class="feature-list">
+        <div class="feature-row">
+          <span class="num">F-01</span>
+          <span class="name">Schema-first protocol</span>
+          <span class="desc">JSON Schema is the single source of truth. TypeScript and C++ types are generated — desktop and firmware can never disagree.</span>
+        </div>
+        <div class="feature-row">
+          <span class="num">F-02</span>
+          <span class="name">Captive-portal onboarding</span>
+          <span class="desc">Join the device's AP, enter SSID / password / timezone. Reconfigure without ever reflashing firmware.</span>
+        </div>
+        <div class="feature-row">
+          <span class="num">F-03</span>
+          <span class="name">Adaptive display</span>
+          <span class="desc">CLOCK ⇄ RESOURCE switches within 1 s of session changes. A dead panel is a wasted panel.</span>
+        </div>
+        <div class="feature-row">
+          <span class="num">F-04</span>
+          <span class="name">Featherweight footprint</span>
+          <span class="desc">Targets &lt; 2% CPU and &lt; 150 MB RSS while streaming. p95 metric freshness ≤ 2 s at a 1 s push interval.</span>
+        </div>
+        <div class="feature-row">
+          <span class="num">F-05</span>
+          <span class="name">mDNS discovery</span>
+          <span class="desc">The device finds the desktop on its own. No IPs, no ports, no setup screens to poke through.</span>
+        </div>
+        <div class="feature-row">
+          <span class="num">F-06</span>
+          <span class="name">Fully local</span>
+          <span class="desc">Nothing leaves your LAN. The only outbound traffic is NTP — for the clock face.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="label">Architecture</div>
+        <h2>Desktop. Device. Display.</h2>
+        <p>
+          A monorepo with three packages: the desktop app, the ESP8266 firmware,
+          and the protocol that binds them.
+        </p>
+      </div>
+      <div class="arch-box">
+<pre>+----------------------------+     WebSocket / JSON      +----------------------------+
+|  LINUX DESKTOP             |  -----------------------> |  ESP8266                   |
+|  Electrobun + React        |                           |  WiFi / WS client          |
+|  CPU / RAM / GPU / Temp    |  <----------------------- |  Message parser            |
++----------------------------+    hello / ack / error    +-------------+--------------+
+                                                                      | I2C
+                                                                      v
+                                                                 +---------+
+                                                                 |  OLED   |
+                                                                 | 128x64  |
+                                                                 +---------+</pre>
+      </div>
+      <div class="stack-row">
+        <span class="chip">Electrobun</span>
+        <span class="chip">Bun</span>
+        <span class="chip">React 19</span>
+        <span class="chip">TanStack Query</span>
+        <span class="chip">Tailwind CSS v4</span>
+        <span class="chip">Vite 7</span>
+        <span class="chip">ESP8266</span>
+        <span class="chip">PlatformIO</span>
+        <span class="chip">ArduinoJson</span>
+        <span class="chip">Adafruit SSD1306</span>
+        <span class="chip active">JSON Schema codegen</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section id="quickstart">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="label">Quick start</div>
+        <h2>From clone to first metric.</h2>
+        <p>
+          Prerequisites: Bun &ge; 1.1, PlatformIO, an ESP8266 board (e.g. Wemos
+          D1 mini) and an SSD1306 128&times;64 I2C OLED.
+        </p>
+      </div>
+      <div class="code-block">
+        <div class="code-label">Terminal</div>
+        <pre><span class="c"># Desktop — metric collector + WebSocket server</span>
+cd apps/desktop &amp;&amp; bun install
+bun run dev
+
+<span class="c"># Firmware — flash the device</span>
+cd apps/firmware &amp;&amp; pio pkg install
+pio run --target upload
+pio device monitor      <span class="c"># serial console @ 115200</span>
+
+<span class="c"># First boot opens a captive portal:</span>
+<span class="c">#   join AP -> enter SSID / password / timezone -> done</span>
+
+<span class="c"># Package a Linux build (.AppImage / .deb)</span>
+cd apps/desktop &amp;&amp; bun run package:linux</pre>
+      </div>
+    </div>
+  </section>
+
+
+</main>
+
+<footer>
+  <div class="wrap foot-grid">
+    <div>
+      <a class="logo" href="#top">resmon24</a>
+      <p class="tiny foot-note">
+        Open-source external hardware resource monitor. No cloud. No accounts.
+      </p>
+    </div>
+    <div class="foot-links">
+      <a data-repo-link href="#">Source</a>
+      <a data-repo-link data-suffix="/releases" href="#">Downloads</a>
+      <a data-repo-link data-suffix="/blob/main/docs/roadmap.md" href="#">Roadmap</a>
+      <a data-repo-link data-suffix="/issues" href="#">Issues</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Set your GitHub repository URL here (used for all "GitHub" links).
+  var REPO_URL = "https://github.com/bayu242/resmon24";
+
+  document.querySelectorAll("[data-repo-link]").forEach(function (el) {
+    var suffix = el.getAttribute("data-suffix") || "";
+    el.setAttribute("href", REPO_URL + suffix);
+    el.setAttribute("target", "_blank");
+    el.setAttribute("rel", "noopener noreferrer");
+  });
+</script>
+
+</body>
+</html>

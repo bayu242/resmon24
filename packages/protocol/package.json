@@ -1,0 +1,19 @@
+{
+  "name": "@resmon24/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "resmon24 shared communication protocol: JSON Schemas (source of truth) and generated TypeScript/C++ types.",
+  "types": "./generated/typescript/index.ts",
+  "exports": {
+    ".": "./generated/typescript/index.ts"
+  },
+  "scripts": {
+    "generate": "node ../../scripts/generate-protocol.mjs",
+    "check": "node ../../scripts/generate-protocol.mjs --check",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/welcome.schema.json",
+  "title": "welcome",
+  "description": "Desktop to device. Acknowledges hello, assigns a session, and switches the device to RESOURCE display mode.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "envelope.schema.json#/$defs/Envelope" },
+    {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": { "const": "welcome" },
+        "data": {
+          "type": "object",
+          "required": ["sessionId", "intervalMs", "serverVersion"],
+          "properties": {
+            "sessionId": {
+              "type": "string",
+              "description": "Session identifier for logging/correlation."
+            },
+            "host": {
+              "type": "string",
+              "description": "Desktop hostname shown on an optional screen."
+            },
+            "intervalMs": {
+              "type": "integer",
+              "description": "Requested push interval; device uses it to compute the stale timeout."
+            },
+            "serverVersion": {
+              "type": "string",
+              "description": "Desktop application version."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

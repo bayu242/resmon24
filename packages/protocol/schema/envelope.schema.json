@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/envelope.schema.json",
+  "title": "Envelope",
+  "description": "Common fields present on every resmon24 protocol message. Message schemas attach this via allOf/$ref.",
+  "$defs": {
+    "Envelope": {
+      "type": "object",
+      "required": ["proto", "ts"],
+      "properties": {
+        "proto": {
+          "type": "integer",
+          "const": 1,
+          "description": "Protocol version this message conforms to."
+        },
+        "ts": {
+          "type": "integer",
+          "description": "Sender timestamp, Unix epoch milliseconds."
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Optional correlation id; responses echo it."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/config.schema.json",
+  "title": "config",
+  "description": "Desktop to device. Display configuration; persisted and applied without reboot.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "envelope.schema.json#/$defs/Envelope" },
+    {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": { "const": "config" },
+        "data": {
+          "type": "object",
+          "required": ["screens", "rotateMs"],
+          "properties": {
+            "screens": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 39,
+                "description": "Single metric id (cpu, memory, gpu, network, sensors, clock, wifi) or a '+'-separated composite such as 'cpu+memory+gpu+network'."
+              },
+              "description": "Ordered, enabled screens (at most 5)."
+            },
+            "rotateMs": {
+              "type": "integer",
+              "description": "Rotation dwell time in milliseconds (2000-60000)."
+            },
+            "brightness": {
+              "type": "integer",
+              "description": "OLED brightness 0-255."
+            },
+            "dimAfterMs": {
+              "type": "integer",
+              "description": "Dim the display after this many ms without fresh samples; 0 disables."
+            },
+            "timezone": {
+              "type": "string",
+              "description": "Optional POSIX TZ override for the onboarding timezone."
+            },
+            "showConnection": {
+              "type": "boolean",
+              "description": "Show WiFi/IP status line."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resmon24.dev/protocol/resource_update.schema.json",
+  "title": "resource_update",
+  "description": "Desktop to device. Core telemetry message. All metric groups are optional and independently present.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "envelope.schema.json#/$defs/Envelope" },
+    {
+      "type": "object",
+      "required": ["type", "data"],
+      "properties": {
+        "type": { "const": "resource_update" },
+        "data": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "object",
+              "properties": {
+                "usage": { "type": "number", "description": "Overall utilization, 0-100." },
+                "tempC": { "type": ["number", "null"], "description": "Package temperature in Celsius." },
+                "cores": {
+                  "type": "array",
+                  "items": { "type": "number" },
+                  "description": "Per-core utilization, 0-100."
+                },
+                "freqMhz": { "type": "integer", "description": "Current frequency in MHz." }
+              }
+            },
+            "memory": {
+              "type": "object",
+              "properties": {
+                "used": { "type": "integer", "description": "Used bytes (see encoding rules)." },
+                "total": { "type": "integer", "description": "Total bytes (see encoding rules)." },
+                "percent": { "type": "number", "description": "Used percentage, 0-100." },
+                "swapUsed": { "type": "integer", "description": "Used swap bytes." },
+                "swapTotal": { "type": "integer", "description": "Total swap bytes." }
+              }
+            },
+            "gpu": {
+              "type": "object",
+              "properties": {
+                "usage": { "type": "number", "description": "GPU utilization, 0-100." },
+                "vramUsed": { "type": "integer", "description": "Used VRAM bytes." },
+                "vramTotal": { "type": "integer", "description": "Total VRAM bytes." },
+                "tempC": { "type": ["number", "null"], "description": "GPU temperature in Celsius." }
+              }
+            },
+            "network": {
+              "type": "object",
+              "properties": {
+                "rxBytesPerSec": { "type": "integer", "description": "Receive throughput, bytes/sec." },
+                "txBytesPerSec": { "type": "integer", "description": "Transmit throughput, bytes/sec." }
+              }
+            },
+            "temperature": {
+              "type": "object",
+              "description": "Board and peripheral temperatures. CPU and GPU package temperatures live in cpu.tempC and gpu.tempC.",
+              "properties": {
+                "system": { "type": ["number", "null"], "description": "Motherboard/chipset temperature in Celsius." },
+                "extras": {
+                  "type": "array",
+                  "description": "Additional labeled sensors (NVMe, drives, ...).",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": { "type": "string", "description": "Short sensor label." },
+                      "tempC": { "type": "number", "description": "Temperature in Celsius." }
+                    }
+                  }
+                }
+              }
+            },
+            "fans": {
+              "type": "object",
+              "description": "Fan speeds reported by lm-sensors.",
+              "properties": {
+                "entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": { "type": "string", "description": "Short fan label." },
+                      "rpm": { "type": "integer", "description": "Current speed in RPM." },
+                      "percent": { "type": ["number", "null"], "description": "PWM duty cycle, 0-100, when reported." }
+                    }
+                  }
+                }
+              }
+            },
+            "uptimeSec": { "type": "integer", "description": "Host uptime in seconds." }
+          }
+        }
+      }
+    }
+  ]
+}
