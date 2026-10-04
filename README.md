@@ -147,4 +147,4 @@ temperature, fans, and screen rotation. See [docs/roadmap.md](docs/roadmap.md).
 
 ## License
 
-To be determined — see repository for updates.
+[MIT](LICENSE) © 2026 Bayu Seto Aji

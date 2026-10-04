@@ -2,9 +2,9 @@ import type { ElectrobunConfig } from "electrobun";
 
 export default {
   app: {
-    name: "ElectrobunDemo",
-    identifier: "com.ataraxy-labs.electrobun-demo",
-    version: "0.1.0",
+    name: "Resmon24",
+    identifier: "com.bayu242.resmon24",
+    version: "1.0.0",
   },
   build: {
     bun: {
@@ -17,7 +17,12 @@ export default {
       "dist/assets": "views/assets",
     },
     mac: { bundleCEF: false },
-    linux: { bundleCEF: false },
+    linux: {
+      category: "Utility",
+      bundleCEF: false,
+      description: "A simple system monitor display on oled screen for Linux",
+      icon: "assets/icon.png",
+    },
     win: { bundleCEF: false },
   },
 } satisfies ElectrobunConfig;
