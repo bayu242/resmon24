@@ -334,7 +334,7 @@
   }
 
   /* ---- Sections ---- */
-  section { padding: var(--sp-8) 0; }
+  section { padding: var(--sp-8) 0; scroll-margin-top: 76px; }
   .section-head {
     border-bottom: var(--border-thick) solid var(--black);
     padding-bottom: var(--sp-4);
@@ -484,6 +484,27 @@
   .kpi-table tr:hover td {
     background: var(--sunken);
   }
+  .table-wrap { overflow-x: auto; }
+  .kpi-table td.pkg {
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.7;
+    min-width: 33ch;
+  }
+  .kpi-table td.pkg b {
+    font-weight: 700;
+  }
+  .kpi-table td .pkg {
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+  .kpi-table td.status-cell { width: 1%; white-space: nowrap; }
+  .kpi-table tr:hover td .chip { border-color: var(--white); color: var(--white); }
+  .kpi-table tr:hover td .chip.active {
+    background: var(--white);
+    color: var(--black);
+    border-color: var(--black);
+  }
   .inverted .kpi-table {
     border-color: var(--white);
   }
@@ -500,6 +521,13 @@
   .inverted .kpi-table tr:hover td {
     background: var(--white);
     color: var(--black);
+  }
+
+  /* ---- Requirements ---- */
+  #requirements .code-block { margin-top: var(--sp-5); }
+  #requirements .req-note {
+    margin-top: var(--sp-3);
+    max-width: 72ch;
   }
 
   /* ---- Quick start code block ---- */
@@ -587,6 +615,7 @@
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#architecture">Architecture</a>
+      <a href="#requirements">Requirements</a>
       <a href="#quickstart">Quick start</a>
       <a class="btn btn-secondary btn-sm" data-repo-link href="#">GitHub</a>
     </nav>
@@ -789,6 +818,81 @@ uptime 3d 07:12   ws  up</pre>
     </div>
   </section>
 
+  <!-- REQUIREMENTS -->
+  <section id="requirements">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="label">Requirements</div>
+        <h2>What your Linux box needs.</h2>
+        <p>
+          Linux x86_64 only. The GUI runtime libraries are mandatory &mdash;
+          the metric packages are optional: anything missing is skipped, never
+          an error.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>Package / command</th>
+              <th>Provides</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="pkg"><b>libgtk-3-0</b><br><b>libwebkit2gtk-4.1-0</b><br><b>libayatana-appindicator3-1</b><br><b>librsvg2-2</b></td>
+              <td>App window, system webview and tray icon. The launcher aborts at startup if any of them is missing.</td>
+              <td class="status-cell"><span class="chip active">Required</span></td>
+            </tr>
+            <tr>
+              <td class="pkg"><b>/proc</b> + <b>/sys</b></td>
+              <td>CPU, RAM, uptime and network counters &mdash; the core resource view. Mounted by default on every Linux install.</td>
+              <td class="status-cell"><span class="chip active">Required</span></td>
+            </tr>
+            <tr>
+              <td class="pkg"><b>nvidia-smi</b><br>NVIDIA proprietary driver</td>
+              <td>GPU utilization, VRAM and GPU temperature (NVIDIA GPUs only). Without it the whole <span class="pkg">gpu</span> group is omitted.</td>
+              <td class="status-cell"><span class="chip">Optional</span></td>
+            </tr>
+            <tr>
+              <td class="pkg"><b>sensors</b><br>lm-sensors + hwmon modules</td>
+              <td>CPU / motherboard / GPU temperature and fan RPM. Run <span class="pkg">sudo sensors-detect</span> once after installing.</td>
+              <td class="status-cell"><span class="chip">Optional</span></td>
+            </tr>
+            <tr>
+              <td class="pkg"><b>fusermount</b><br>FUSE / libfuse2</td>
+              <td>Only needed to mount the <span class="pkg">.AppImage</span> build. Use the <span class="pkg">.deb</span>, or launch with <span class="pkg">APPIMAGE_EXTRACT_AND_RUN=1</span>.</td>
+              <td class="status-cell"><span class="chip">AppImage only</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-block">
+        <div class="code-label">Install</div>
+<pre><span class="c"># Required — GUI runtime (pick your distro)</span>
+sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 libayatana-appindicator3-1 librsvg2-2   <span class="c"># Ubuntu / Debian</span>
+sudo dnf install gtk3 webkit2gtk4.1 libappindicator-gtk3 librsvg2                        <span class="c"># Fedora / RHEL</span>
+sudo pacman -S gtk3 webkit2gtk-4.1 libayatana-appindicator librsvg                       <span class="c"># Arch / Manjaro</span>
+
+<span class="c"># Optional — GPU + temperature/fan collectors</span>
+sudo apt install nvidia-driver-560 lm-sensors libfuse2   <span class="c"># Ubuntu / Debian</span>
+sudo dnf install xorg-x11-drv-nvidia lm-sensors fuse     <span class="c"># Fedora / RHEL</span>
+sudo pacman -S nvidia lm-sensors fuse2                   <span class="c"># Arch / Manjaro</span>
+sudo sensors-detect                                      <span class="c"># load hwmon kernel modules</span>
+
+<span class="c"># Verify — both should exit 0</span>
+nvidia-smi
+sensors -j</pre>
+      </div>
+      <p class="small req-note">
+        AMD and Intel GPUs have no utilization collector yet &mdash; only
+        temperature, via lm-sensors. Dev tooling is separate: Bun &ge; 1.1,
+        Node &ge; 20 LTS, PlatformIO for firmware.
+      </p>
+    </div>
+  </section>
+
   <!-- QUICK START -->
   <section id="quickstart">
     <div class="wrap">
@@ -797,7 +901,8 @@ uptime 3d 07:12   ws  up</pre>
         <h2>From clone to first metric.</h2>
         <p>
           Prerequisites: Bun &ge; 1.1, PlatformIO, an ESP8266 board (e.g. Wemos
-          D1 mini) and an SSD1306 128&times;64 I2C OLED.
+          D1 mini) and an SSD1306 128&times;64 I2C OLED &mdash; plus the Linux
+          packages under <a href="#requirements">Requirements</a>.
         </p>
       </div>
       <div class="code-block">

@@ -49,7 +49,8 @@ No cloud. No accounts. Just your machine, your LAN, and a tiny display.
                                                                 └─────────┘
 ```
 
-1. The **desktop app** samples hardware metrics (via `systeminformation`) and
+1. The **desktop app** samples hardware metrics (native `os` / `/proc` reads for
+   CPU + RAM, `nvidia-smi` for GPU, lm-sensors for temperature/fans) and
    serves them over a local WebSocket.
 2. The **firmware** discovers the desktop via mDNS, connects, and parses the
    schema-defined JSON messages.
@@ -78,11 +79,59 @@ resmon24/
 
 ## Getting started
 
-### Prerequisites
+### System requirements
 
-- [Bun](https://bun.sh) ≥ 1.1
-- [PlatformIO](https://platformio.org) (CLI or IDE) for firmware
-- Linux desktop (packaged builds target Linux x64)
+resmon24 targets **Linux x86_64 only** (packaged builds are `.AppImage` / `.deb` /
+`.tar.zst`). Two tiers: the GUI runtime libs are mandatory, the metric-source
+packages are optional — every optional collector degrades gracefully (the metric
+group is simply omitted, never an error).
+
+#### Required — the app will not start without these
+
+Electrobun draws its window through the **system webview**, so the GTK 3 /
+WebKit2GTK stack must be installed:
+
+| Distro | Install command |
+|---|---|
+| Ubuntu / Debian | `sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0 libayatana-appindicator3-1 librsvg2-2` |
+| Fedora / RHEL | `sudo dnf install gtk3 webkit2gtk4.1 libappindicator-gtk3 librsvg2` |
+| Arch / Manjaro | `sudo pacman -S gtk3 webkit2gtk-4.1 libayatana-appindicator librsvg` |
+
+This provides `libgtk-3.so.0`, `libwebkit2gtk-4.1.so.0`,
+`libjavascriptcoregtk-4.1.so.0`, `libsoup-3.0.so.0`,
+`libayatana-appindicator3.so.1` and `librsvg2.so.2`. On GNOME you also need the
+[AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-and-legacy-kstatusnotifieritem-support/)
+for the tray icon (KDE / XFCE / MATE / Cinnamon work out of the box).
+
+A stock Linux install with `/proc` and `/sys` mounted is also required — CPU,
+RAM, uptime and network rates are read from there with no fallback.
+
+#### Optional — install these to unlock extra metrics
+
+| Package | Command | Enables | If missing |
+|---|---|---|---|
+| NVIDIA driver → **`nvidia-smi`** | Ubuntu/Debian: `sudo apt install nvidia-driver-560`<br>Fedora: `sudo dnf install xorg-x11-drv-nvidia`<br>Arch: `sudo pacman -S nvidia` | GPU utilization, VRAM, GPU temperature (NVIDIA GPUs only) | `gpu` group omitted, retried every 60 s |
+| **lm-sensors** → `sensors` | `sudo apt install lm-sensors` (or `dnf`/`pacman -S lm-sensors`), then `sudo sensors-detect` | CPU / motherboard / GPU temperature, fan RPM | falls back to `systeminformation`, then omits `temperature` + `fans` |
+| FUSE → `fusermount` | Ubuntu/Debian: `sudo apt install libfuse2`<br>Fedora: `sudo dnf install fuse`<br>Arch: `sudo pacman -S fuse2` | running the `.AppImage` build | use the `.deb`, or run with `APPIMAGE_EXTRACT_AND_RUN=1` |
+
+Verify your install:
+
+```bash
+nvidia-smi    # GPU utilization / VRAM / temp  (exit 0 = available)
+sensors -j    # temperature + fan JSON         (exit 0 = available)
+```
+
+> AMD / Intel GPUs have no utilization collector yet — only temperature via
+> lm-sensors. Missing tools never break the app; the affected metrics are just
+> left out of the payload.
+
+#### Development tooling
+
+- [Bun](https://bun.sh) ≥ 1.1 — desktop runtime, package manager, script runner
+- [Node.js](https://nodejs.org) ≥ 20 LTS — protocol codegen
+- [PlatformIO](https://platformio.org) (CLI or IDE) — firmware builds
+- Packaging only: `dpkg-deb` ≥ 1.20, `mksquashfs` (zstd or gzip), `curl`, `tar`
+  with zstd, `sha256sum`
 - Hardware: ESP8266 board (e.g. Wemos D1 mini) + SSD1306 128×64 I2C OLED
 
 ### Setup
